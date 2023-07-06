@@ -15,6 +15,7 @@
                 new Circle(5),
                 new Rectangle(4, 5)
             };
+
             foreach (Shape shape in shapes)
             {
                 shape.GetInfo();

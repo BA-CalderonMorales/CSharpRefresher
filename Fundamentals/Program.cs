@@ -1,4 +1,4 @@
-﻿using Fundamentals;
+using Fundamentals;
 using Fundamentals.Abstraction;
 using Fundamentals.Aggregate;
 using Fundamentals.Arrays;
@@ -20,6 +20,7 @@ using Fundamentals.HelloWorld;
 using Fundamentals.Inheritance;
 using Fundamentals.Interfaces;
 using Fundamentals.LINQ;
+using Fundamentals.NHibernate101;
 using Fundamentals.SB;
 using Fundamentals.Select;
 using Fundamentals.Serialization;
@@ -66,10 +67,12 @@ namespace ConsoleApp1
             // Aggregate.Lesson();
             // Enumerables.Lesson();
             // LINQ.Lesson();
-            Threads.Lesson();
+            // Threads.Lesson();
             // DirectoriesAndFiles.Lesson();
             // Serialization.Lesson();
             // Databases.Lesson();
+            NHibernate101.Lesson();
         }
     }
 }
+
