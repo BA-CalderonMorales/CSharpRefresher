@@ -4,7 +4,7 @@
 				   namespace="Fundamentals.NHibernate101">
 	<class name="Customer">
 		<id name="Id">
-			<generator class="native"/>
+			<generator class="guid.comb"/>
 		</id>
 		<property name="FirstName" />
 		<property name="LastName" />
@@ -14,7 +14,7 @@
 		<property name="CreditRating" type="CustomerCreditRatingType" />
 		<property name="AverageRating" />
 
-		<component name="Address">
+		<component name="Address" >
 			<property name="Street" />
 			<property name="City" />
 			<property name="Province" />

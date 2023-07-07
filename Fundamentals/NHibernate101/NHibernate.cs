@@ -6,6 +6,7 @@ using NHibernate.Driver;
 using NHibernate.Hql;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Reflection;
@@ -50,7 +51,11 @@ namespace Fundamentals.NHibernate101
             // UpdateDataWithNHibernate(sessionFactory, "CM", "Calderon-Morales");
             // DeleteDataWithNHibernate(sessionFactory, 4);
             // MappingMetaData(sessionFactory);
-            MappingComponents(sessionFactory);
+            // MappingComponents(sessionFactory);
+            // PrimaryKeys(sessionFactory);
+            // NHibernateConfiguration();
+            NHibernateRelationships(sessionFactory);
+
             #endregion
         }
 
@@ -193,7 +198,7 @@ namespace Fundamentals.NHibernate101
         #region Helper Methods
 
         public static void QueryIndividualCustomerPrimaryKey(ISessionFactory sessionFactory,
-            int pkToQuery,
+            Guid pkToQuery,
             bool hold = false)
         {
             
@@ -361,7 +366,7 @@ namespace Fundamentals.NHibernate101
         }
 
         public static void DeleteDataWithNHibernate(ISessionFactory sessionFactory,
-            int pkToDelete)
+            Guid pkToDelete)
         {
             Console.WriteLine("Before delete...");
             QueryIndividualCustomerPrimaryKey(sessionFactory, pkToDelete);
@@ -461,22 +466,236 @@ namespace Fundamentals.NHibernate101
             using (var session = sessionFactory.OpenSession())
             using (var tx = session.BeginTransaction())
             {
+                var address = new Location
+                {
+                    Street = "123 Somewhere Avenue",
+                    City = "Nowhere",
+                    Province = "Alberta",
+                    Country = "Canada"
+                };
                 var customer = CreateCustomer("John",
                     "Doe",
                     100,
                     true,
                     CustomerCreditRating.Excellent,
                     42.42424242,
-                    new Location()
+                    address);
+                session.Save(customer);
+                tx.Commit();
+                QueryIndividualCustomerLastName(sessionFactory, customer.LastName); // will not work if same last name is queried (TRUNCATE TABLE [Server_Name].[dbo].[Customer]; to delete all entries with the same last name and try again.
+            }
+        }
+
+        public static void PrimaryKeys(ISessionFactory sessionFactory)
+        {
+            using (var session = sessionFactory.OpenSession())
+            using (var tx = session.BeginTransaction())
+            {
+                /**
+                 * Primary Key Generation
+                 * 
+                 * - Assigned:
+                 *      - Application's responsibility to assign a PK.
+                 * - Native:
+                 *      - Use Identity, Sequence, or HiLo depending on the database engine
+                 * - Identity:
+                 *      - Use identity column in supported databases
+                 * - Sequence:
+                 *      - Use sequence in supported databases (seen with oracle)
+                 * - HiLo
+                 *      - Use HiLo algorithm with a table (hilo) or a sequence (seqhilo)
+                 * - Guid or Guid.Comb
+                 *      - Use a Guid primary key generated
+                 * - Others...can also create own, but strongly consider using built-in generators.
+                 * 
+                 * Recommendations for PK Generation Strategies
+                 * - Do not use "assigned"
+                 *      - NHibernate cannot tell if the object is new or updated
+                 *      
+                 * - Avoid Identity or sequence
+                 *      - NHibernate must make a database roundtrip per new object
+                 *      
+                 * - Avoid native
+                 *      - For most databases, this maps to identity or sequence
+                 * 
+                 * - If you don't like Guid PKs, use "hilo" or "seqhilo"
+                 *      - NHibernate can make a single call to the database to reverse a range of PKs
+                 *      - PKs are only unique to a single database
+                 *      - integer pks
+                 *      
+                 * - If you don't mind Guid PKs, use guid.comb
+                 *      - NHibernate can assign PKs without calling the database
+                 *      - PKs are unique across a database cluster
+                 *      - Guid.comb algorithm avoids index fragmentation issues
+                 *      - guid pks (guid.comb for incremental guid generation approach).
+                 */
+                tx.Commit();
+            }
+        }
+
+        public static void NHibernateConfiguration()
+        {
+            /**
+             * Ways to Configure NHibernate
+             * - XML
+             *      - hibernate.cfg.xml
+             *      - app.config
+             * 
+             * - Code-based
+             *      - Loquacious (built-in to NHibernate)
+             *      - Fluent NHibernate
+             * 
+             * Overriding NHibernate Configuration
+             * - Configuration is additive
+             * - Last configuration wins
+             * 
+             * var cfg = new Configuration();
+             * cfg.DatabaseIntegration(x =>
+             * {
+             *      ...configs using built-in Loquacious
+             * });
+             * 
+             * cfg.AddAssembly(Assembly.GetExecutingAssembly();
+             * cfg.Configure("hibernate.cfg.xml"); // Loads hibernate.cfg.xml
+             */
+
+            // Hard-coded connection-string - valid option
+            StringBuilder sb = new StringBuilder();
+            sb.Append("Data Source=CALDERONMUNOZ\\BRANDON_LS;");
+            sb.Append("Initial Catalog=Brandon_LocalServer;");
+            sb.Append("Integrated Security=True;");
+            sb.Append("Connect Timeout=30;");
+            sb.Append("Encrypt=False;");
+
+            // Loquacious configuration
+            var cfg = new Configuration();
+            cfg.DataBaseIntegration(
+                x =>
+                {
+                    // x.ConnectionString = "default"; // may or may not be same as using hard-coded value
+                    x.ConnectionString = sb.ToString();
+                    x.Driver<SqlClientDriver>(); // OracleClientDriver
+                    x.Dialect<MsSql2008Dialect>(); // Oracle10gDialect
+                    x.IsolationLevel = IsolationLevel.RepeatableRead;
+                    x.Timeout = 10; // (seconds)
+                    x.BatchSize = 10; // SQL Server and Oracle supported - batch is default to 20 in newer versions of NHibernate.
+                    x.LogSqlInConsole = true; // use for debugging, set to false in production
+                });
+            // cfg.SessionFactory().GenerateStatistics(); // helpful with NHibernate Profiler
+            // cfg.SessionFactory().Caching - can be Query or Entity specific caching
+            cfg.AddAssembly(Assembly.GetExecutingAssembly());
+            var sessionFactory = cfg.BuildSessionFactory();
+
+            /**
+             * XML configuration:
+             * will automatically read the hibernate.cfg.xml file located in project
+             * cfg.Configure("hibernate.cfg.xml");
+             * 
+             * example hibernate.cfg.xml:
+             * 
+             * properties of hibernate.cfg.xml file:
+             * - Build Action : Content
+             * - Copy to Output Direct : Copy if newer
+             * - Custom Tool : n/a
+             * - Custom Tool Namespace : n/a
+             * - File Name : hibernate.cfg.xml
+             * - Full Path : C:\Users\<User>\**path to hibernate.cfg.xml
+             * 
+             * <?xml version="1.0" encoding="utf-8" ?>
+             * <hibernate-configuration xmlns="urn:nhibernate-configuration-2.2">
+             *      <session-factory>
+             *          <property name="connection.connection_string_name">default</property> 
+             *          <property name="connection.driver_class">NHibernate.Driver.SqlClientDriver</property> 
+             *          <property name="dialect">NHibernate.Dialect.MsSql2008Dialect</property>
+             *          <property name="show_sql">true</property>
+             *          <mapping assembly="Fundamentals.NHibernate101"/>
+             *      </session-factory>
+             * </hibernate-configuration>
+             */
+
+            using (var session = sessionFactory.OpenSession())
+            using (var tx = session.BeginTransaction())
+            {
+                for (var i = 0; i < 25; i++)
+                {
+                    var newCustomer = CreateCustomer(
+                        "Billy",
+                        "Bob",
+                        100,
+                        true,
+                        CustomerCreditRating.Terrible,
+                        78.23231,
+                        new Location
+                        {
+                            Street = "123 Somewhere Avenue",
+                            City = "Nowhere",
+                            Province = "Alberta",
+                            Country = "Canada"
+                        });
+                    session.Save(newCustomer);
+                }
+                tx.Commit();
+                Console.WriteLine("Press <Enter> to exit.");
+                Console.ReadLine();
+            }
+        }
+
+        public static void NHibernateRelationships(ISessionFactory sessionFactory)
+        {
+            /**
+             * Understanding Relationships
+             * 
+             * Customer.Orders
+             *      - <set><one-to-many class="Order"/></set>
+             *      - Two tables, Customer and Order, with a CustomerId on the Order table
+             * 
+             * Order.Customer
+             *      - <many-to-one name="Customer"/>
+             *      - Two tables, Customer and Order, with a FK on Order pointing back to its
+             *      parent Customer.
+             *      
+             * Customer.Addresses
+             *      - <many-to-many></many-to-many>
+             *      - Two tables with a joining table
+             *      - Joining table has two FKs, one to each table
+             */
+
+            // one-to-many
+            using (var session = sessionFactory.OpenSession())
+            using (var tx = session.BeginTransaction())
+            {
+                var newCustomer = CreateCustomer(
+                    "Billy",
+                    "Bob",
+                    100,
+                    true,
+                    CustomerCreditRating.Terrible,
+                    78.23231,
+                    new Location
                     {
                         Street = "123 Somewhere Avenue",
                         City = "Nowhere",
                         Province = "Alberta",
                         Country = "Canada"
-                    });
-                session.Save(customer);
+                    }
+                    //,
+                    //{
+                    //    new Order
+                    //    {
+                    //        Ordered = DateTime.Now
+                    //    },
+                    //    new Order
+                    //    {
+                    //        Ordered = DateTime.Now.AddDays(-1),
+                    //        Shipped = DateTime.Now
+                    //        ShipTo = CreateLocation()
+                    //    }
+                    //}
+                    );
+                session.Save(newCustomer);
                 tx.Commit();
-                QueryIndividualCustomerLastName(sessionFactory, customer.LastName);
+                Console.WriteLine("Press <Enter> to exit.");
+                Console.ReadLine();
             }
         }
     }

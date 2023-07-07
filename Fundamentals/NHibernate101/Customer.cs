@@ -13,7 +13,7 @@ namespace Fundamentals.NHibernate101
 
     public class Customer
     {
-        public virtual int Id { get; set; }
+        public virtual Guid Id { get; set; }
         public virtual string FirstName { get; set; }
         public virtual string LastName { get; set; }
         public virtual int Points { get; set; }
