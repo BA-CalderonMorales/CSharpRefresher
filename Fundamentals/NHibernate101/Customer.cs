@@ -22,5 +22,8 @@ namespace Fundamentals.NHibernate101
         public virtual CustomerCreditRating CreditRating { get; set; }
         public virtual double AverageRating { get; set; }
         public virtual Location Address { get; set; }
+
+        public virtual ISet<Order> Orders { get; set; } // to use <set> in xml
+        //public virtual IList<Order> Orders { get; set; } // to use <bag> in xml
     }
 }

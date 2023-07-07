@@ -9,10 +9,12 @@
 
   <ItemGroup>
     <None Remove="NHibernate101\Customer.hbm.xml" />
+    <None Remove="NHibernate101\Order.hbm.xml" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="NHibernate101\Customer.hbm.xml" />
+    <EmbeddedResource Include="NHibernate101\Order.hbm.xml" />
   </ItemGroup>
 
   <ItemGroup>

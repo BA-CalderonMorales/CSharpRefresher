@@ -20,5 +20,11 @@
 			<property name="Province" />
 			<property name="Country" />
 		</component>
+
+		<!-- Order is a keyword in nhibernate, using backticks here intentionally -->
+		<set name="Orders" table="`Order`"> <!-- Can interchange with bag tag, if IList is used in class -->
+			<key column="CustomerId" /> <!-- Foreign Key -->
+			<one-to-many class="Order" />
+		</set>
 	</class>
 </hibernate-mapping>

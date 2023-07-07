@@ -271,7 +271,8 @@ namespace Fundamentals.NHibernate101
             bool hasGoldStatus,
             CustomerCreditRating creditRating,
             double averageRating,
-            Location location)
+            Location location,
+            ISet<Order> orders)
         {
             return new Customer
             {
@@ -282,8 +283,23 @@ namespace Fundamentals.NHibernate101
                 MemberSince = DateTime.Now,
                 CreditRating = creditRating,
                 AverageRating = averageRating,
-                Address = location
+                Address = location,
+                Orders = orders
             };
+        }
+
+        public static Location CreateLocation(string street,
+            string city,
+            string province,
+            string country)
+        {
+                return new Location
+                {
+                    Street = street,
+                    City = city,
+                    Province = province,
+                    Country = country
+                };
         }
 
         #endregion
@@ -466,23 +482,23 @@ namespace Fundamentals.NHibernate101
             using (var session = sessionFactory.OpenSession())
             using (var tx = session.BeginTransaction())
             {
-                var address = new Location
-                {
-                    Street = "123 Somewhere Avenue",
-                    City = "Nowhere",
-                    Province = "Alberta",
-                    Country = "Canada"
-                };
-                var customer = CreateCustomer("John",
-                    "Doe",
-                    100,
-                    true,
-                    CustomerCreditRating.Excellent,
-                    42.42424242,
-                    address);
-                session.Save(customer);
+                //var address = new Location
+                //{
+                //    Street = "123 Somewhere Avenue",
+                //    City = "Nowhere",
+                //    Province = "Alberta",
+                //    Country = "Canada"
+                //};
+                //var customer = CreateCustomer("John",
+                //    "Doe",
+                //    100,
+                //    true,
+                //    CustomerCreditRating.Excellent,
+                //    42.42424242,
+                //    address);
+                //session.Save(customer);
                 tx.Commit();
-                QueryIndividualCustomerLastName(sessionFactory, customer.LastName); // will not work if same last name is queried (TRUNCATE TABLE [Server_Name].[dbo].[Customer]; to delete all entries with the same last name and try again.
+                //QueryIndividualCustomerLastName(sessionFactory, customer.LastName); // will not work if same last name is queried (TRUNCATE TABLE [Server_Name].[dbo].[Customer]; to delete all entries with the same last name and try again.
             }
         }
 
@@ -616,24 +632,24 @@ namespace Fundamentals.NHibernate101
             using (var session = sessionFactory.OpenSession())
             using (var tx = session.BeginTransaction())
             {
-                for (var i = 0; i < 25; i++)
-                {
-                    var newCustomer = CreateCustomer(
-                        "Billy",
-                        "Bob",
-                        100,
-                        true,
-                        CustomerCreditRating.Terrible,
-                        78.23231,
-                        new Location
-                        {
-                            Street = "123 Somewhere Avenue",
-                            City = "Nowhere",
-                            Province = "Alberta",
-                            Country = "Canada"
-                        });
-                    session.Save(newCustomer);
-                }
+                //for (var i = 0; i < 25; i++)
+                //{
+                //    var newCustomer = CreateCustomer(
+                //        "Billy",
+                //        "Bob",
+                //        100,
+                //        true,
+                //        CustomerCreditRating.Terrible,
+                //        78.23231,
+                //        new Location
+                //        {
+                //            Street = "123 Somewhere Avenue",
+                //            City = "Nowhere",
+                //            Province = "Alberta",
+                //            Country = "Canada"
+                //        });
+                //    session.Save(newCustomer);
+                //}
                 tx.Commit();
                 Console.WriteLine("Press <Enter> to exit.");
                 Console.ReadLine();
@@ -659,11 +675,58 @@ namespace Fundamentals.NHibernate101
              *      - Two tables with a joining table
              *      - Joining table has two FKs, one to each table
              */
+            // OneToOne(sessionFactory);
+            OneToMany(sessionFactory);
+            // Lists(sessionFactory);
+            // Sets(sessionFactory);
+            // Bags(sessionFactory);
+            // Others(sessionFactory);
+        }
 
-            // one-to-many
+        private static void OneToOne(ISessionFactory sessionFactory)
+        {
+            /**
+             * Customer.Person
+             * <one-to-one name="Person" />
+             * Two tables, Customer and Person, share same PK
+             * i.e. one person for every customer.
+             * 
+             * In general, avoid <one-to-one/>
+             * 
+             * Use inheritance
+             * - Customer IS-A Person
+             * 
+             * Use <many-to-one>
+             * - Customer HAS-A DefaultShippingAddress
+             * - Customers table has a standard FK to Addresses
+             * - <many-to-one name="DefaultShippingAddress" />
+             */
+            throw new NotImplementedException();
+        }
+
+        public static void OneToMany(ISessionFactory sessionFactory)
+        {
+            // one-to-many - no cascade="save-update" or casecade="all-delete-orphan" in hbm.xml
+            Guid id;
             using (var session = sessionFactory.OpenSession())
             using (var tx = session.BeginTransaction())
             {
+                ISet<Order> orders = new HashSet<Order>();
+                orders.Add(new Order()
+                {
+                    Ordered = DateTime.Now.AddDays(1),
+                    Shipped = DateTime.Now,
+                });
+                orders.Add(new Order()
+                {
+                    Ordered = DateTime.Now.AddDays(1),
+                    Shipped = DateTime.Now,
+                    ShipTo = CreateLocation("234 Another Avenue",
+                    "Somewhere",
+                    "Omaha",
+                    "United Estatedes")
+                });
+
                 var newCustomer = CreateCustomer(
                     "Billy",
                     "Bob",
@@ -677,26 +740,62 @@ namespace Fundamentals.NHibernate101
                         City = "Nowhere",
                         Province = "Alberta",
                         Country = "Canada"
-                    }
-                    //,
-                    //{
-                    //    new Order
-                    //    {
-                    //        Ordered = DateTime.Now
-                    //    },
-                    //    new Order
-                    //    {
-                    //        Ordered = DateTime.Now.AddDays(-1),
-                    //        Shipped = DateTime.Now
-                    //        ShipTo = CreateLocation()
-                    //    }
-                    //}
-                    );
+                    },
+                    orders);
                 session.Save(newCustomer);
+                // without cascade="save-update" we would have to do something like this.
+                // not ideal, given nhibernate has some baked in solutions for this exact
+                // scenario.
+                foreach (var order in newCustomer.Orders)
+                {
+                    session.Save(order);
+                }
+                id = newCustomer.Id;
                 tx.Commit();
                 Console.WriteLine("Press <Enter> to exit.");
                 Console.ReadLine();
+                QueryIndividualCustomerPrimaryKey(sessionFactory, id);
             }
+        }
+        private static void Lists(ISessionFactory sessionFactory)
+        {
+            /**
+             * List
+             * - Ordered collection of non-unique elements
+             * - Mapped using System.Collections.Generic.IList<T>
+             */
+            throw new NotImplementedException();
+        }
+
+        private static void Sets(ISessionFactory sessionFactory)
+        {
+            /**
+             * Set
+             * - Unordered collection of unique elements
+             * - Mapped using lesi.Collections.Generic.ISet<T>
+             * - Or HashSet<T>(.NET 4.0+ only)
+             */
+            throw new NotImplementedException();
+        }
+        private static void Bags(ISessionFactory sessionFactory)
+        {
+            /**
+             * Bag
+             * Unordered collection of non-unique elements
+             * Mapped using System.Collections.Generic.IList<T>
+             */
+            throw new NotImplementedException();
+        }
+
+        private static void Others(ISessionFactory sessionFactory)
+        {
+            /**
+             * - Map(HashTable or Dictionary<K, T>)
+             * - Array
+             * - Primitive Array
+             * - IdBag
+             */
+            throw new NotImplementedException();
         }
     }
 }
