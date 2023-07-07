@@ -13,6 +13,11 @@ namespace Fundamentals.NHibernate101
 
     public class Customer
     {
+        public Customer()
+        {
+            MemberSince = DateTime.UtcNow;
+            Orders = new HashSet<Order>(); // default here so it's always initialized
+        }
         public virtual Guid Id { get; set; }
         public virtual string FirstName { get; set; }
         public virtual string LastName { get; set; }
