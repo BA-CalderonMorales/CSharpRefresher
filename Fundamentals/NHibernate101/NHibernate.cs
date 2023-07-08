@@ -711,21 +711,23 @@ namespace Fundamentals.NHibernate101
             using (var session = sessionFactory.OpenSession())
             using (var tx = session.BeginTransaction())
             {
-                ISet<Order> orders = new HashSet<Order>();
-                orders.Add(new Order()
+                ISet<Order> orders = new HashSet<Order>
                 {
-                    Ordered = DateTime.Now.AddDays(1),
-                    Shipped = DateTime.Now,
-                });
-                orders.Add(new Order()
-                {
-                    Ordered = DateTime.Now.AddDays(1),
-                    Shipped = DateTime.Now,
-                    ShipTo = CreateLocation("234 Another Avenue",
+                    new Order()
+                    {
+                        Ordered = DateTime.Now.AddDays(1),
+                        Shipped = DateTime.Now,
+                    },
+                    new Order()
+                    {
+                        Ordered = DateTime.Now.AddDays(1),
+                        Shipped = DateTime.Now,
+                        ShipTo = CreateLocation("234 Another Avenue",
                     "Somewhere",
                     "Omaha",
                     "United Estatedes")
-                });
+                    }
+                };
 
                 var newCustomer = CreateCustomer(
                     "Billy",
