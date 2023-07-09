@@ -1,9 +1,11 @@
 ﻿using NHibernate;
 using NHibernate.Cache;
 using NHibernate.Cfg;
+using NHibernate.Criterion;
 using NHibernate.Dialect;
 using NHibernate.Driver;
 using NHibernate.Hql;
+using NHibernate.Linq;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -54,10 +56,17 @@ namespace Fundamentals.NHibernate101
             // MappingComponents(sessionFactory);
             // PrimaryKeys(sessionFactory);
             // NHibernateConfiguration();
-            NHibernateRelationships(sessionFactory);
-
+            // NHibernateRelationships(sessionFactory);
+            // NHibernateCascades(sessionFactory);
+            // NHibernateLazyLoading(sessionFactory);
+            // NHibernateUnderstandInverseEqualsTrue(sessionFactory);
+            // NHibernateGetVsLoad(sessionFactory);
+            // NHibernateLINQ(sessionFactory);
+            // NHibernateHQL(sessionFactory);
+            NHibernateCriteriaQueries(sessionFactory);
             #endregion
         }
+
 
         public static void Overview()
         {
@@ -199,21 +208,53 @@ namespace Fundamentals.NHibernate101
 
         public static void QueryIndividualCustomerPrimaryKey(ISessionFactory sessionFactory,
             Guid pkToQuery,
-            bool hold = false)
+            bool hold = false,
+            bool innerJoinFetch = false)
         {
             
             using (var session = sessionFactory.OpenSession())
             using (var tx = session.BeginTransaction())
             {
+                Console.WriteLine("Loaded");
                 var query = from customer in session.Query<Customer>()
                 where customer.Id == pkToQuery 
                 select customer;
 
                 try
                 {
-                    var found = query.Single();
-                    Console.WriteLine("Found Customer: {0} {1}, PK: {2}",
-                        found.FirstName, found.LastName, found.Id);
+                    if (innerJoinFetch)
+                    {
+                        // var found = query.First(); two queries
+                        // var found = query.Fetch(x => x.Orders).First(); // one query
+                        // Console.WriteLine(found);
+
+                        // n + 1 queries will happen when using query.ToList();
+                        // var reloaded = query.ToList();
+                        // Console.WriteLine("Reloaded");
+                        // foreach (var customer in reloaded)
+                        // {
+                        // Console.WriteLine(customer);
+                        // foreach (var order in customer.Orders)
+                        // {
+                        // Console.WriteLine(order);
+                        // }
+                        // }
+
+                        // instead, do eager join per query basis to reduce number of round trips to db:
+                        var reloaded = query.Fetch(x => x.Orders).ToList();
+                        Console.WriteLine("Reloaded");
+                        foreach (var customer in reloaded)
+                        {
+                            Console.WriteLine(customer);
+                        }
+                    }
+                    else
+                    {
+                        var found = query.Single();
+                        Console.WriteLine("Reloaded");
+                        Console.WriteLine("Found Customer: {0} {1}, PK: {2}",
+                            found.FirstName, found.LastName, found.Id);
+                    }
                 }
                 catch (System.InvalidOperationException)
                 {
@@ -303,8 +344,8 @@ namespace Fundamentals.NHibernate101
         }
 
         #endregion
+        
 
-        #region CRUD Operations
 
         public static void QueryDbWithNHibernate(ISessionFactory sessionFactory)
         {
@@ -407,8 +448,6 @@ namespace Fundamentals.NHibernate101
             Console.WriteLine("After delete...");
             QueryIndividualCustomerPrimaryKey(sessionFactory, pkToDelete, true);
         }
-
-        #endregion
 
         public static void MappingMetaData(ISessionFactory sessionFactory)
         {
@@ -676,7 +715,7 @@ namespace Fundamentals.NHibernate101
              *      - Joining table has two FKs, one to each table
              */
             // OneToOne(sessionFactory);
-            OneToMany(sessionFactory);
+            // OneToMany(sessionFactory);
             // Lists(sessionFactory);
             // Sets(sessionFactory);
             // Bags(sessionFactory);
@@ -703,7 +742,7 @@ namespace Fundamentals.NHibernate101
              */
             throw new NotImplementedException();
         }
-
+        
         public static void OneToMany(ISessionFactory sessionFactory)
         {
             // one-to-many - no cascade="save-update" or casecade="all-delete-orphan" in hbm.xml
@@ -759,6 +798,7 @@ namespace Fundamentals.NHibernate101
                 QueryIndividualCustomerPrimaryKey(sessionFactory, id);
             }
         }
+        
         private static void Lists(ISessionFactory sessionFactory)
         {
             /**
@@ -779,6 +819,7 @@ namespace Fundamentals.NHibernate101
              */
             throw new NotImplementedException();
         }
+
         private static void Bags(ISessionFactory sessionFactory)
         {
             /**
@@ -798,6 +839,379 @@ namespace Fundamentals.NHibernate101
              * - IdBag
              */
             throw new NotImplementedException();
+        }
+
+        private static void NHibernateCascades(ISessionFactory sessionFactory)
+        {
+            /**
+             * Cascade:
+             * - Tells NHibernate how to handle child entites
+             * - Options:
+             *      - none: no cascades (default)
+             *      - all: cascade saves, updates, and deletes
+             *      - save-update: cascade saves and updates
+             *      - delete: cascade deletes
+             *      - all-delete-orphan: same as all and delete orphaned rows
+             * - Can specify default-cascade in hbm.xml file
+             */
+            // one-to-many - cascade="save-update" or casecade="all-delete-orphan" in hbm.xml
+            Guid id;
+            using (var session = sessionFactory.OpenSession())
+            using (var tx = session.BeginTransaction())
+            {
+                ISet<Order> orders = new HashSet<Order>
+                {
+                    new Order()
+                    {
+                        Ordered = DateTime.Now.AddDays(1),
+                        Shipped = DateTime.Now,
+                    },
+                    new Order()
+                    {
+                        Ordered = DateTime.Now.AddDays(1),
+                        Shipped = DateTime.Now,
+                        ShipTo = CreateLocation("234 Another Avenue",
+                    "Somewhere",
+                    "Omaha",
+                    "United Estatedes")
+                    }
+                };
+
+                var newCustomer = CreateCustomer(
+                    "Billy",
+                    "Bob",
+                    100,
+                    true,
+                    CustomerCreditRating.Terrible,
+                    78.23231,
+                    new Location
+                    {
+                        Street = "123 Somewhere Avenue",
+                        City = "Nowhere",
+                        Province = "Alberta",
+                        Country = "Canada"
+                    },
+                    orders);
+                session.Save(newCustomer); // no need to loop and session.Save each child entity.
+                tx.Commit();
+                id = newCustomer.Id;
+                QueryIndividualCustomerPrimaryKey(sessionFactory, id);
+            }
+        }
+
+        public static void NHibernateLazyLoading(ISessionFactory sessionFactory)
+        {
+            /**
+             * LazyLoading
+             * 
+             * - By default, if a Customer is pulled in, it won't load in all of the orders.
+             * - Associations lazy loaded by default.
+             * - Requires open ISession
+             * - Fetching strategies
+             *      - Select, outer-join
+             * - Avoiding the N + 1 SELECT problem
+             *      - Load a customer (query), customer has orders (query):
+             *      - for each order in that collection I need the order line items,
+             *      - n + 1 queries to database
+             *      - this is where outer-joins could come into help.
+             */
+            Guid id;
+            using (var session = sessionFactory.OpenSession())
+            using (var tx = session.BeginTransaction())
+            {
+                ISet<Order> orders = new HashSet<Order>
+                {
+                    new Order()
+                    {
+                        Ordered = DateTime.Now.AddDays(1),
+                        Shipped = DateTime.Now,
+                    },
+                    new Order()
+                    {
+                        Ordered = DateTime.Now.AddDays(1),
+                        Shipped = DateTime.Now,
+                        ShipTo = CreateLocation("234 Another Avenue",
+                    "Somewhere",
+                    "Omaha",
+                    "United Estatedes")
+                    }
+                };
+
+                var newCustomer = CreateCustomer(
+                    "Billy",
+                    "Bob",
+                    100,
+                    true,
+                    CustomerCreditRating.Terrible,
+                    78.23231,
+                    new Location
+                    {
+                        Street = "123 Somewhere Avenue",
+                        City = "Nowhere",
+                        Province = "Alberta",
+                        Country = "Canada"
+                    },
+                    orders);
+                session.Save(newCustomer); // no need to loop and session.Save each child entity.
+                tx.Commit();
+                id = newCustomer.Id;
+                QueryIndividualCustomerPrimaryKey(sessionFactory, id, false, true); // see method.
+            }
+
+        }
+
+        private static void NHibernateUnderstandInverseEqualsTrue(ISessionFactory sessionFactory)
+        {
+            /**
+             * Understanding Inverse="true"
+             * 
+             * - Relational model
+             *      - Bidirectional associations using one FK
+             * - OO model
+             *      - Unidirectional associations using references
+             *      
+             * Nhibernate doesn't have enough information to know that Customer.Orders
+             * and Order.Customer represent the same relationship in the db.
+             * 
+             * So inverse="true" is provided as a hint to Nhibernate.
+             * 
+             * - Bidirectional associations in the OO
+             *      - Two unidirectional associations with the same data.
+             * - Inverse="true" tells NHibernate which one to ignore.
+             * - Prevents duplicate updates of FK.
+             * - Prevents FK violations
+             * - Which table owns the FK?
+             *      - <many-to-one /> and <one-to-many /> collection
+             *          - inverse is <one-to-many /> collection
+             *          
+             *      - <many-to-many />
+             *          - choose either
+             *  N.B. Cascades are an orthogonal concept. Do not convolute concepts
+             *  of cascade and inverse.
+             */
+        }
+
+        private static void NHibernateGetVsLoad(ISessionFactory sessionFactory)
+        {
+            /**
+             * Get vs. Load
+             * 
+             * ISession.Get<T>(Id)
+             * - Returns object or null
+             * 
+             * ISession.Load<T>(Id)
+             * - Returns object or throws ObjectNotFoundException
+             * 
+             * Load can optimize database roundtrips
+             * - Load returns a proxy object
+             * - Load need not access the db immediately
+             * - Get must return null if object does not exist (bc of clr)
+             * - Get must access the db immediately
+             * 
+             * If session.Load<Customer>(goodId) is called again (after first time),
+             * a proxy will not be returned since the object has already been 
+             * loaded.
+             */
+            using (var session = sessionFactory.OpenSession())
+            using (var tx = session.BeginTransaction())
+            {
+                // var goodId = Guid.Parse("160C861B-E852-4E8F-995F-B0390005F5D3");
+                // var badId = Guid.Parse("160C861B-FFFF-FFFF-995F-B0390005F5D3");
+
+                // var customer = session.Get<Customer>(goodId); // does not return proxy object
+                // var badCustomer = session.Get<Customer>(badId); // same as good, but throws nothing 
+                // var customer = session.Load<Customer>(goodId); // returns a proxy object (step through)
+                // var badCustomer = session.Load<Customer>(badId); // throws an ObjectNotFoundException
+
+                // Console.WriteLine(customer); // proxy will be loaded once it's properties are accessed.
+                // try
+                // {
+                //    Console.WriteLine(badCustomer); // ObjectNotFound
+                // }
+                // catch (ObjectNotFoundException onfe)
+                // {
+                //    Console.WriteLine("Customer not found!");
+                // }
+                // finally
+                // {
+                //    tx.Commit();
+                // }
+
+                //ISet<Order> orders = new HashSet<Order>
+                //{
+                //    new Order(),
+                //    new Order()
+                //};
+
+                //// Add a new customer to the db.
+                //var newCustomer = CreateCustomer(
+                //    "Mary",
+                //    "Jane",
+                //    25,
+                //    true,
+                //    CustomerCreditRating.Excellent,
+                //    98.21231213,
+                //    new Location
+                //    {
+                //        Street = "123 Somewhere Avenue",
+                //        City = "Nowhere",
+                //        Province = "Alberta",
+                //        Country = "Canada"
+                //    },
+                //    orders);
+                //session.Save(newCustomer);
+
+                // Use session.Get and session.Load based off id in db
+                var goodId = Guid.Parse("34B8B925-DEF5-42EA-9EDE-B0390148D335");
+                var badId = Guid.Parse("160C861B-FFFF-FFFF-995F-B0390005F5D3");
+
+                var order = new Order();
+                //order.Customer = session.Get<Customer>(goodId); // already have the pk
+                order.Customer = session.Load<Customer>(goodId); // don't need to load record to insert
+                session.Save(order);
+
+                // Often .Load is used to optimize Insert statements.
+                tx.Commit();
+            }
+        }
+        
+        private static void NHibernateLINQ(ISessionFactory sessionFactory)
+        {
+            /**
+             * NHibernate LINQ
+             * 
+             * - Accessed through ISession.Query<T>()
+             * - Use method chain syntax:
+             * 
+             * var query = session.Query<Customer>()
+             *                    .Where(c => c.FirstName == "John");
+             *                    
+             * Or query comprehensions
+             * 
+             * var query = from c in session.Query<Customer>()
+             *             where c.FirstName == "John"
+             *             select c;
+             *             
+             * N.B. Be carefule of unintentional multiple enumeration
+             */
+            using (var session = sessionFactory.OpenSession())
+            using (var tx = session.BeginTransaction())
+            {
+                //Object chaining syntax:
+                //var query = session.Query<Customer>()
+                //            .Where(c => c.FirstName.StartsWith("M"));
+
+                //Query comprehensions syntax (same query as above):
+                //var query = from customer in session.Query<Customer>()
+                //            where customer.FirstName.StartsWith("M")
+                //            select customer;
+
+                /**
+                 * Both will generate the exact same sql to generate the customers.
+                 */
+
+                //Complicated queries
+                //var query = from customer in session.Query<Customer>()
+                //            where customer.Orders.Count > 2
+                //            orderby customer.FirstName, customer.LastName
+                //            select customer;
+
+                //foreach (var customer in query.ToList())
+                //{
+                //    Console.WriteLine(customer);
+                //}
+
+                var query = from c in session.Query<Customer>()
+                            where c.Orders.Count > 1
+                            orderby c.FirstName, c.LastName
+                            select new // new Type
+                            {
+                                c.FirstName,
+                                c.LastName,
+                                OrderCount = c.Orders.Count
+                            };
+                
+                foreach (var stat in query.ToList()) // query.ToList() is a List<new Type>
+                {
+                    Console.WriteLine("{0} {1} placed {2} orders",
+                        stat.FirstName, stat.LastName, stat.OrderCount);
+                }
+
+                // var customers = query.AsEnumerable(); // will query more than once
+                // var customers = query.AsQueryable(); // also query more than once
+
+                tx.Commit();
+            }
+        }
+        
+        private static void NHibernateHQL(ISessionFactory sessionFactory)
+        {
+            /**
+             * Hibernate Query Language (HQL)
+             * 
+             * - Oldest query mechanism (along with Criteria)
+             * - Accessed through ISession.CreateQuery()
+             * - HQL is SQL-Like
+             * 
+             * var query = session.CreateQuery(
+             *      @"
+             *      SELECT C
+             *      FROM CUSTOMER C
+             *      WHERE C.FirstName = 'Mary'");
+             */
+            using (var session = sessionFactory.OpenSession())
+            using (var tx = session.BeginTransaction())
+            {
+                var query = session.CreateQuery("select c from Customer c " +
+                                                "where c.Orders.size > 1 " +
+                                                "order by c.FirstName asc, c.LastName asc");
+                foreach (var customer in query.List<Customer>()) // cast here, even if not required.
+                {
+                    Console.WriteLine(customer + "\n");
+                }
+                tx.Commit();
+            }
+        }
+        
+        private static void NHibernateCriteriaQueries(ISessionFactory sessionFactory)
+        {
+            /**
+             * Criteria Queries
+             * 
+             * - Classic criteria query syntax
+             * 
+             * var query = session.CreateCriteria<Customer>()
+             *                    .Add(Restrictions.Eq("FirstName", "John"));
+             *                    
+             * - LINQ-style method chain syntax
+             * 
+             * var query = session.QueryOver<Customer>()
+             *                    .Where(x => x.FirstName == "John");
+             *                    
+             * - Can't mix and match syntax within the same query, but can within the same app.
+             */
+            using (var session = sessionFactory.OpenSession())
+            using (var tx = session.BeginTransaction())
+            {
+
+                // classic syntax
+                //var query = session.CreateCriteria<Customer>()
+                //                    // (Restrictions.Eq...
+                //                    // (Restrictions.NotEq...
+                //                   .Add(Restrictions.Like("FirstName", "M%"));
+
+                // LINQ-style syntax
+                var query = session.QueryOver<Customer>()
+                                   .Where(c => c.FirstName == "Mary");
+                // 'cept, can't use c.FirstName.StartsWith method bc of runtime exception
+ 
+                foreach (var customer in query.List<Customer>())
+                {
+                    Console.WriteLine(customer + "\n");
+                }
+
+                tx.Commit();
+            }
         }
     }
 }

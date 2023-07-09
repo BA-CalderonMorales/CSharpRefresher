@@ -22,7 +22,12 @@
 		</component>
 
 		<!-- Order is a keyword in nhibernate, using backticks here intentionally -->
-		<set name="Orders" table="`Order`"> <!-- Can interchange with bag tag, if IList is used in class -->
+		<!--
+			If using inverse="true", NHibernate will disregard the cascade="<any-option>"
+			If updating the parent should also update the child (if child info is present),
+			then don't include inverse="true".
+		-->
+		<set name="Orders" table="`Order`" cascade="all-delete-orphan"> <!-- Can interchange with bag tag, if IList is used in class -->
 			<key column="CustomerId" /> <!-- Foreign Key -->
 			<one-to-many class="Order" />
 		</set>

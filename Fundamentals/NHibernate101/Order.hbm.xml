@@ -14,6 +14,7 @@
 			<property name="Province" />
 			<property name="Country" />
 		</component>
-		<many-to-one name="Customer" column="CustomerId"/>
+		<!-- inverse="true" cannot be set here, can be set with many-to-many -->
+		<many-to-one name="Customer" column="CustomerId" cascade="save-update"/>
 	</class>
 </hibernate-mapping>

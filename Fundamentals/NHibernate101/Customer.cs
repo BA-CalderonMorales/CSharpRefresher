@@ -18,6 +18,7 @@ namespace Fundamentals.NHibernate101
             MemberSince = DateTime.UtcNow;
             Orders = new HashSet<Order>(); // default here so it's always initialized
         }
+
         public virtual Guid Id { get; set; }
         public virtual string FirstName { get; set; }
         public virtual string LastName { get; set; }
@@ -30,5 +31,16 @@ namespace Fundamentals.NHibernate101
 
         public virtual ISet<Order> Orders { get; set; } // to use <set> in xml
         //public virtual IList<Order> Orders { get; set; } // to use <bag> in xml
+
+        public virtual void AddOrder(Order order)
+        {
+            Orders.Add(order);
+            order.Customer = this;
+        }
+
+        public override string ToString()
+        {
+            return $"Customer Information:\n\nFirst Name: {this.FirstName}\nLast Name: {this.LastName}";
+        }
     }
 }
