@@ -24,6 +24,7 @@ using Fundamentals.NHibernate101;
 using Fundamentals.SB;
 using Fundamentals.Select;
 using Fundamentals.Serialization;
+using Fundamentals.SolidPrinciples;
 using Fundamentals.StringFunctions;
 using Fundamentals.Threads;
 using Fundamentals.Where;
@@ -71,7 +72,8 @@ namespace ConsoleApp1
             // DirectoriesAndFiles.Lesson();
             // Serialization.Lesson();
             // Databases.Lesson();
-            NHibernate101.Lesson();
+            // NHibernate101.Lesson();
+            SolidPrinciples.Lesson();
         }
     }
 }
