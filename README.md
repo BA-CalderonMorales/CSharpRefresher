@@ -40,3 +40,4 @@ our conversation, if necessary.
 ## Additional Documentation and Acknowledgments
 
 * FreeCodeCamp tutorials
+* PluralSight modules
