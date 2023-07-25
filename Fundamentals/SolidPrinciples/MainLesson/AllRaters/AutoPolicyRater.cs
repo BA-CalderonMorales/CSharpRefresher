@@ -1,10 +1,11 @@
-﻿using Fundamentals.SolidPrinciples.SingleResponsibilityPrinciple;
+﻿using Fundamentals.SolidPrinciples.MainLesson.Interfaces;
 
-namespace Fundamentals.SolidPrinciples.RatingEngineFiles
+namespace Fundamentals.SolidPrinciples.MainLesson.AllRaters
 {
     public class AutoPolicyRater : Rater
     {
-        public AutoPolicyRater(RatingEngine engine, ConsoleLogger logger) : base(engine, logger)
+        public AutoPolicyRater(IRatingUpdate ratingUpdate)
+            : base(ratingUpdate)
         {
         }
 
@@ -12,7 +13,7 @@ namespace Fundamentals.SolidPrinciples.RatingEngineFiles
         {
             Logger.Log("Rating AUTO policy...");
             Logger.Log("Validating policy");
-            if (String.IsNullOrEmpty(policy.Make))
+            if (string.IsNullOrEmpty(policy.Make))
             {
                 Logger.Log("Auto policy must specify Make");
                 return;
@@ -21,9 +22,10 @@ namespace Fundamentals.SolidPrinciples.RatingEngineFiles
             {
                 if (policy.Deductible < 500)
                 {
-                    Engine.Rating = 1000m;
+                    RatingUpdate.UpdateRating(1000m);
+                    return;
                 }
-                Engine.Rating = 900m;
+                RatingUpdate.UpdateRating(900m);
             }
         }
     }

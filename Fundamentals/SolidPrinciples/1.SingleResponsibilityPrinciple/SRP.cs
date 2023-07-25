@@ -1,4 +1,4 @@
-﻿using Fundamentals.SolidPrinciples.RatingEngineFiles;
+﻿using Fundamentals.SolidPrinciples.MainLesson;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -111,11 +111,11 @@ namespace Fundamentals.SolidPrinciples.SingleResponsibilityPrinciple
          * Example:
          * An insurance rating service
          */
-        public static void Lesson(bool goodOrBadSrpFlag = true)
+        public static void Lesson(bool solidOrNo = true)
         {
             Console.WriteLine("Ardalis Insurance Rating System Starting...");
             var engine = new RatingEngine();
-            engine.Rate(goodOrBadSrpFlag); // disregards srp
+            engine.Rate(solidOrNo);
         }
         #endregion
 

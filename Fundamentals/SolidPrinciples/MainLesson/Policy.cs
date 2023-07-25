@@ -1,4 +1,4 @@
-﻿namespace Fundamentals.SolidPrinciples.RatingEngineFiles
+﻿namespace Fundamentals.SolidPrinciples.MainLesson
 {
     public class Policy
     {

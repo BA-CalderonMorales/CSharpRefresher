@@ -1,4 +1,4 @@
-﻿using Fundamentals.SolidPrinciples.RatingEngineFiles;
+﻿using Fundamentals.SolidPrinciples.MainLesson;
 
 namespace Fundamentals.Tests;
 

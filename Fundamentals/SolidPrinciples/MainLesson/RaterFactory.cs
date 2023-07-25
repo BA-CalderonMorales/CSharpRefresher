@@ -1,6 +1,9 @@
-﻿using System.Text;
+﻿using Fundamentals.SolidPrinciples.MainLesson.AllRaters;
+using Fundamentals.SolidPrinciples.MainLesson.Interfaces;
+using Fundamentals.SolidPrinciples.MainLesson.Logger;
+using System.Text;
 
-namespace Fundamentals.SolidPrinciples.RatingEngineFiles
+namespace Fundamentals.SolidPrinciples.MainLesson.AllRaters
 {
     public class RaterFactory
     {
@@ -14,20 +17,20 @@ namespace Fundamentals.SolidPrinciples.RatingEngineFiles
                     StringBuilder builder = new StringBuilder();
                     builder.Append("Fundamentals.");
                     builder.Append("SolidPrinciples.");
-                    builder.Append("RatingEngineFiles.");
+                    builder.Append("MainLesson.");
+                    builder.Append("AllRaters.");
                     builder.Append($"{policy.Type}PolicyRater");
 
-                    return (Rater)Activator.CreateInstance(
-                                Type.GetType(builder.ToString()),
+                    return (Rater)Activator.CreateInstance(Type.GetType(builder.ToString()),
                                 new object[]
                                 {
-                                    engine,
-                                    engine.Logger
+                                    new RaterUpdate(engine)
                                 });
                 }
                 catch
                 {
-                    return null;
+                    // return null; returning null violates LSP!
+                    return new UnknownPolicyRater(new RaterUpdate(engine));
                 }
             }
             else
@@ -35,15 +38,15 @@ namespace Fundamentals.SolidPrinciples.RatingEngineFiles
                 switch (policy.Type)
                 {
                     case PolicyType.Auto:
-                        return new AutoPolicyRater(engine, engine.Logger);
+                        return new AutoPolicyRater(new RaterUpdate(engine));
                     case PolicyType.Land:
-                        return new LandPolicyRater(engine, engine.Logger);
+                        return new LandPolicyRater(new RaterUpdate(engine));
                     case PolicyType.Life:
-                        return new LifePolicyRater(engine, engine.Logger);
+                        return new LifePolicyRater(new RaterUpdate(engine));
                     case PolicyType.Flood:
-                        return new FloodPolicyRater(engine, engine.Logger);
+                        return new FloodPolicyRater(new RaterUpdate(engine));
                     default:
-                        return new Rater(engine, engine.Logger);
+                        return new UnknownPolicyRater(new RaterUpdate(engine));
                 }
             }
         }

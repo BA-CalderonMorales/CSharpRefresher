@@ -1,10 +1,11 @@
-﻿using Fundamentals.SolidPrinciples.SingleResponsibilityPrinciple;
+﻿using Fundamentals.SolidPrinciples.MainLesson.Interfaces;
 
-namespace Fundamentals.SolidPrinciples.RatingEngineFiles
+namespace Fundamentals.SolidPrinciples.MainLesson.AllRaters
 {
     public class FloodPolicyRater : Rater
     {
-        public FloodPolicyRater(RatingEngine engine, ConsoleLogger logger) : base(engine, logger)
+        public FloodPolicyRater(IRatingUpdate ratingUpdate)
+            : base(ratingUpdate)
         {
         }
 
@@ -12,7 +13,7 @@ namespace Fundamentals.SolidPrinciples.RatingEngineFiles
         {
             Logger.Log("Rating FLOOD policy...");
             Logger.Log("Validating policy");
-            if (policy.BondAmount == 0 || policy.Valuation ==0)
+            if (policy.BondAmount == 0 || policy.Valuation == 0)
             {
                 Logger.Log("Flood policy must specify Bond Amount and Valuation");
                 return;
@@ -40,7 +41,7 @@ namespace Fundamentals.SolidPrinciples.RatingEngineFiles
             {
                 multiple = 1.1m;
             }
-            Engine.Rating = policy.BondAmount * 0.05m * multiple;
+            RatingUpdate.UpdateRating(policy.BondAmount * 0.05m * multiple);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Fundamentals.SolidPrinciples.RatingEngineFiles;
+﻿using Fundamentals.SolidPrinciples.MainLesson;
 
 namespace Fundamentals.SolidPrinciples.OpenClosePrinciple
 {
@@ -117,6 +117,19 @@ namespace Fundamentals.SolidPrinciples.OpenClosePrinciple
          * - Can add behavior without touching existing code
          * - Can follow SRP
          * - Can be unit-tested (even if the rest of the app is a big ball of mud)
+         * 
+         * Packages and Libraries
+         * - Closed for modification
+         *      - Consumers cannot change package contents (dlls need to be recompiled to mod)
+         *      - Should not break consumers when new behavior is added
+         * - Open to extension
+         *      - Consumers should be able to extend the package to suit their own needs
+         *      
+         * Key takeaways
+         * - Solve the problem first using simple, concrete code
+         * - Identify the kinds of changes the application is likely to continue needing
+         * - Modify code to be extensible along the axis of change you've identified
+         *      - Without the need to modify its source each time...
          */
         #endregion
         public static void Lesson(bool goodOrBadOcpFlag = true)

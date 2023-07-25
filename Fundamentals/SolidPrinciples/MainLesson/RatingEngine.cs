@@ -1,8 +1,9 @@
-﻿using Fundamentals.SolidPrinciples.SingleResponsibilityPrinciple;
+﻿using Fundamentals.SolidPrinciples.MainLesson.AllRaters;
+using Fundamentals.SolidPrinciples.MainLesson.Logger;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace Fundamentals.SolidPrinciples.RatingEngineFiles
+namespace Fundamentals.SolidPrinciples.MainLesson
 {
     public class RatingEngine
     {
@@ -21,7 +22,6 @@ namespace Fundamentals.SolidPrinciples.RatingEngineFiles
             {
                 NoSOLID();
             }
-            DetermineRating();
         }
 
         private void GoodSOLID()
@@ -39,8 +39,7 @@ namespace Fundamentals.SolidPrinciples.RatingEngineFiles
             string policyJson = PolicySource.GetPolicyFromSource("policy.json"); // load policy - open file policy.json
             var policy = PolicyDeserializer.GetPolicyFromJsonString(policyJson);
             var rater = RaterFactory.Create(policy, this, true);
-            rater?.Rate(policy);
-            Logger.Log("Rating completed.");
+            rater.Rate(policy);
         }
 
         private void NoSOLID()

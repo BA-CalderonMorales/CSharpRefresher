@@ -1,10 +1,11 @@
-﻿using Fundamentals.SolidPrinciples.SingleResponsibilityPrinciple;
+﻿using Fundamentals.SolidPrinciples.MainLesson.Interfaces;
 
-namespace Fundamentals.SolidPrinciples.RatingEngineFiles
+namespace Fundamentals.SolidPrinciples.MainLesson.AllRaters
 {
     public class LandPolicyRater : Rater
     {
-        public LandPolicyRater(RatingEngine engine, ConsoleLogger logger) : base(engine, logger)
+        public LandPolicyRater(IRatingUpdate ratingUpdate)
+            : base(ratingUpdate)
         {
         }
 
@@ -22,7 +23,7 @@ namespace Fundamentals.SolidPrinciples.RatingEngineFiles
                 Logger.Log("Insufficient bond amount.");
                 return;
             }
-            Engine.Rating = policy.BondAmount * 0.05m;
+            RatingUpdate.UpdateRating(policy.BondAmount * 0.05m);
         }
     }
 }

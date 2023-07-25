@@ -1,5 +1,5 @@
 ﻿using Fundamentals.SolidPrinciples;
-using Fundamentals.SolidPrinciples.RatingEngineFiles;
+using Fundamentals.SolidPrinciples.MainLesson;
 using Fundamentals.SolidPrinciples.SingleResponsibilityPrinciple;
 using Fundamentals.Tests;
 using Newtonsoft.Json;

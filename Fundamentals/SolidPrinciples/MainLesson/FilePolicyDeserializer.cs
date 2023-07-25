@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json.Converters;
 using Newtonsoft.Json;
-using Fundamentals.SolidPrinciples.SingleResponsibilityPrinciple;
+using Fundamentals.SolidPrinciples.MainLesson.Logger;
 
-namespace Fundamentals.SolidPrinciples.RatingEngineFiles
+namespace Fundamentals.SolidPrinciples.MainLesson
 {
 
     public class FilePolicyDeserializer

@@ -1,10 +1,11 @@
-﻿using Fundamentals.SolidPrinciples.SingleResponsibilityPrinciple;
+﻿using Fundamentals.SolidPrinciples.MainLesson.Interfaces;
 
-namespace Fundamentals.SolidPrinciples.RatingEngineFiles
+namespace Fundamentals.SolidPrinciples.MainLesson.AllRaters
 {
     public class LifePolicyRater : Rater
     {
-        public LifePolicyRater(RatingEngine engine, ConsoleLogger logger) : base(engine, logger)
+        public LifePolicyRater(IRatingUpdate ratingUpdate)
+            : base(ratingUpdate)
         {
         }
 
@@ -37,10 +38,10 @@ namespace Fundamentals.SolidPrinciples.RatingEngineFiles
             decimal baseRate = policy.Amount * age / 200;
             if (policy.IsSmoker)
             {
-                Engine.Rating = baseRate * 2;
+                RatingUpdate.UpdateRating(baseRate * 2);
                 return;
             }
-            Engine.Rating = baseRate;
+            RatingUpdate.UpdateRating(baseRate);
         }
     }
 }

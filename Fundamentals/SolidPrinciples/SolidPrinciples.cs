@@ -1,11 +1,7 @@
 ﻿using Fundamentals.SolidPrinciples.SingleResponsibilityPrinciple;
 using Fundamentals.SolidPrinciples.OpenClosePrinciple;
-using NHibernate.Dialect.Function;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Fundamentals.SolidPrinciples.LiskovSubstitutionPrinciple;
+using Fundamentals.SolidPrinciples.InterfaceSegregationPrinciple;
 
 namespace Fundamentals.SolidPrinciples
 {
@@ -14,7 +10,9 @@ namespace Fundamentals.SolidPrinciples
         public static void Lesson()
         {
             // SRP.Lesson();
-            OCP.Lesson();
+            // OCP.Lesson();
+            // LSP.Lesson();
+            ISP.Lesson();
         }
     }
 }
